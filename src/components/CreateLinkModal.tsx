@@ -26,9 +26,13 @@ export const CreateLinkModal: React.FC<CreateLinkModalProps> = ({
   });
 
   const [errors, setErrors] = useState<ValidationErrors>({});
+  const [touched, setTouched] = useState<Record<string, boolean>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
   const firstInputRef = useRef<HTMLInputElement>(null);
   const modalRef = useRef<HTMLDivElement>(null);
+
+  // Minimum allowed expiry datetime string (now formatted as YYYY-MM-DDTHH:mm)
+  const minExpiryDateTime = new Date(Date.now() + 60000).toISOString().slice(0, 16);
 
   // Focus trap & Escape key listener
   useEffect(() => {
@@ -54,30 +58,103 @@ export const CreateLinkModal: React.FC<CreateLinkModalProps> = ({
         expireBy: '',
       });
       setErrors({});
+      setTouched({});
       setIsSubmitting(false);
     }
   }, [isOpen, onClose]);
 
   if (!isOpen) return null;
 
+  // Prevent invalid characters for numeric inputs
+  const handleNumericKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (['-', '+', 'e', 'E'].includes(e.key)) {
+      e.preventDefault();
+    }
+  };
+
+  const validateFieldImmediately = (
+    name: string,
+    value: string | number | boolean,
+    currentData: CreatePaymentLinkInput
+  ) => {
+    const updatedData = { ...currentData, [name]: value };
+    const { errors: allErrors } = validatePaymentLinkForm(updatedData);
+
+    setErrors((prev) => {
+      const next = { ...prev };
+      const fieldKey = name as keyof ValidationErrors;
+
+      if (allErrors[fieldKey]) {
+        next[fieldKey] = allErrors[fieldKey];
+      } else {
+        delete next[fieldKey];
+      }
+
+      // If either phone or email becomes valid, clear mutual contact error
+      const hasEmail = Boolean(updatedData.customerEmail && updatedData.customerEmail.trim());
+      const hasPhone = Boolean(updatedData.customerPhone && updatedData.customerPhone.trim());
+      if ((hasEmail || hasPhone) && next.customerEmail === 'Provide at least an email or phone number for notification') {
+        delete next.customerEmail;
+      }
+
+      // If amount changes, update minPartialAmount error if applicable
+      if (name === 'amount' && updatedData.allowPartialPayment && updatedData.minPartialAmount) {
+        if (allErrors.minPartialAmount) {
+          next.minPartialAmount = allErrors.minPartialAmount;
+        } else {
+          delete next.minPartialAmount;
+        }
+      }
+
+      return next;
+    });
+  };
+
   const handleChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
   ) => {
     const { name, value, type } = e.target;
-    const checked = (e.target as HTMLInputElement).checked;
+    let finalValue: any = value;
 
-    setFormData((prev) => ({
-      ...prev,
-      [name]: type === 'checkbox' ? checked : value,
-    }));
-
-    // Clear field-specific error as user types
-    if (errors[name as keyof ValidationErrors]) {
-      setErrors((prev) => ({
-        ...prev,
-        [name]: undefined,
-      }));
+    if (type === 'checkbox') {
+      finalValue = (e.target as HTMLInputElement).checked;
+    } else if (name === 'customerPhone') {
+      // Strictly restrict to maximum 10 digits (numbers only)
+      finalValue = value.replace(/\D/g, '').slice(0, 10);
+    } else if (name === 'amount' || name === 'minPartialAmount') {
+      // Restrict decimals to 2 digits max
+      if (value.includes('.')) {
+        const [integer, decimal] = value.split('.');
+        finalValue = `${integer}.${decimal.slice(0, 2)}`;
+      }
+    } else if (name === 'description') {
+      finalValue = value.slice(0, 200);
+    } else if (name === 'customerName' || name === 'customerEmail') {
+      finalValue = value.slice(0, 80);
     }
+
+    setFormData((prev) => {
+      const next = { ...prev, [name]: finalValue };
+      // Run immediate validation if field was touched or if user entered a complete/boundary value
+      if (
+        touched[name] ||
+        (name === 'customerPhone' && finalValue.length === 10) ||
+        (name === 'amount' && parseFloat(finalValue) > 10000000) ||
+        (name === 'description' && finalValue.length > 0)
+      ) {
+        validateFieldImmediately(name, finalValue, next);
+      }
+      return next;
+    });
+  };
+
+  const handleBlur = (
+    e: React.FocusEvent<HTMLInputElement | HTMLTextAreaElement>
+  ) => {
+    const { name, value, type } = e.target;
+    const finalValue = type === 'checkbox' ? (e.target as HTMLInputElement).checked : value;
+    setTouched((prev) => ({ ...prev, [name]: true }));
+    validateFieldImmediately(name, finalValue, formData);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -172,9 +249,12 @@ export const CreateLinkModal: React.FC<CreateLinkModalProps> = ({
                 type="number"
                 step="any"
                 min="1"
+                max="10000000"
                 placeholder="e.g. 2500"
                 value={formData.amount}
                 onChange={handleChange}
+                onBlur={handleBlur}
+                onKeyDown={handleNumericKeyDown}
                 aria-invalid={Boolean(errors.amount)}
                 aria-describedby={errors.amount ? 'amount-error' : undefined}
                 className={`w-full pl-9 pr-3 py-2 text-sm bg-white border rounded-lg focus:outline-none focus:ring-2 transition-all ${
@@ -225,6 +305,7 @@ export const CreateLinkModal: React.FC<CreateLinkModalProps> = ({
                 placeholder="e.g. Consultation fee for Invoice #401"
                 value={formData.description}
                 onChange={handleChange}
+                onBlur={handleBlur}
                 aria-invalid={Boolean(errors.description)}
                 aria-describedby={errors.description ? 'description-error' : undefined}
                 className={`w-full pl-9 pr-3 py-2 text-sm bg-white border rounded-lg focus:outline-none focus:ring-2 transition-all ${
@@ -257,9 +338,11 @@ export const CreateLinkModal: React.FC<CreateLinkModalProps> = ({
                 id="customerName"
                 name="customerName"
                 type="text"
+                maxLength={80}
                 placeholder="e.g. Priya Sharma"
                 value={formData.customerName}
                 onChange={handleChange}
+                onBlur={handleBlur}
                 className="w-full pl-9 pr-3 py-2 text-sm bg-white border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-razorpay-blue transition-all"
               />
             </div>
@@ -282,9 +365,11 @@ export const CreateLinkModal: React.FC<CreateLinkModalProps> = ({
                   id="customerEmail"
                   name="customerEmail"
                   type="email"
+                  maxLength={80}
                   placeholder="name@example.com"
                   value={formData.customerEmail}
                   onChange={handleChange}
+                  onBlur={handleBlur}
                   aria-invalid={Boolean(errors.customerEmail)}
                   aria-describedby={errors.customerEmail ? 'email-error' : undefined}
                   className={`w-full pl-9 pr-3 py-2 text-sm bg-white border rounded-lg focus:outline-none focus:ring-2 transition-all ${
@@ -302,12 +387,15 @@ export const CreateLinkModal: React.FC<CreateLinkModalProps> = ({
             </div>
 
             <div>
-              <label
-                htmlFor="customerPhone"
-                className="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1"
-              >
-                Customer Phone
-              </label>
+              <div className="flex items-center justify-between mb-1">
+                <label
+                  htmlFor="customerPhone"
+                  className="block text-xs font-semibold text-slate-700 uppercase tracking-wider"
+                >
+                  Customer Phone
+                </label>
+                <span className="text-[11px] text-slate-400">10 digits</span>
+              </div>
               <div className="relative">
                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400">
                   <Phone className="w-4 h-4" aria-hidden="true" />
@@ -316,9 +404,13 @@ export const CreateLinkModal: React.FC<CreateLinkModalProps> = ({
                   id="customerPhone"
                   name="customerPhone"
                   type="tel"
+                  inputMode="numeric"
+                  pattern="[0-9]*"
+                  maxLength={10}
                   placeholder="9876543210"
                   value={formData.customerPhone}
                   onChange={handleChange}
+                  onBlur={handleBlur}
                   aria-invalid={Boolean(errors.customerPhone)}
                   aria-describedby={errors.customerPhone ? 'phone-error' : undefined}
                   className={`w-full pl-9 pr-3 py-2 text-sm bg-white border rounded-lg focus:outline-none focus:ring-2 transition-all ${
@@ -369,6 +461,8 @@ export const CreateLinkModal: React.FC<CreateLinkModalProps> = ({
                   placeholder="e.g. 500"
                   value={formData.minPartialAmount}
                   onChange={handleChange}
+                  onBlur={handleBlur}
+                  onKeyDown={handleNumericKeyDown}
                   aria-invalid={Boolean(errors.minPartialAmount)}
                   aria-describedby={errors.minPartialAmount ? 'min-partial-error' : undefined}
                   className={`w-full px-3 py-1.5 text-sm bg-white border rounded-lg focus:outline-none focus:ring-2 transition-all ${
@@ -402,8 +496,10 @@ export const CreateLinkModal: React.FC<CreateLinkModalProps> = ({
                 id="expireBy"
                 name="expireBy"
                 type="datetime-local"
+                min={minExpiryDateTime}
                 value={formData.expireBy}
                 onChange={handleChange}
+                onBlur={handleBlur}
                 aria-invalid={Boolean(errors.expireBy)}
                 aria-describedby={errors.expireBy ? 'expiry-error' : undefined}
                 className={`w-full pl-9 pr-3 py-2 text-sm bg-white border rounded-lg focus:outline-none focus:ring-2 transition-all ${

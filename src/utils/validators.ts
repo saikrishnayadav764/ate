@@ -12,6 +12,15 @@ export function isValidIndianPhone(phone: string): boolean {
   return PHONE_REGEX.test(cleanPhone);
 }
 
+export function validateField(
+  field: keyof CreatePaymentLinkInput,
+  input: CreatePaymentLinkInput,
+  now: Date = new Date()
+): string | undefined {
+  const { errors } = validatePaymentLinkForm(input, now);
+  return errors[field as keyof ValidationErrors];
+}
+
 export function validatePaymentLinkForm(
   input: CreatePaymentLinkInput,
   now: Date = new Date()
