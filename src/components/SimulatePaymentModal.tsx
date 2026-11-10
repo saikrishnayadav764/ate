@@ -162,3 +162,4 @@ export const SimulatePaymentModal: React.FC<SimulatePaymentModalProps> = ({
     </div>
   );
 };
+

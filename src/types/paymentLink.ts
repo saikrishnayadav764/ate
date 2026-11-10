@@ -47,3 +47,4 @@ export interface ValidationErrors {
   minPartialAmount?: string;
   expireBy?: string;
 }
+

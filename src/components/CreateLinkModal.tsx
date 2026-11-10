@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { CreatePaymentLinkInput, ValidationErrors } from '../types/paymentLink';
 import { validatePaymentLinkForm } from '../utils/validators';
-import { X, Loader2, IndianRupee, Calendar, Mail, Phone, User, FileText } from 'lucide-react';
+import { X, Loader2, IndianRupee, Calendar, Mail, Phone, User, FileText, AlertTriangle } from 'lucide-react';
 
 interface CreateLinkModalProps {
   isOpen: boolean;
@@ -132,14 +132,35 @@ export const CreateLinkModal: React.FC<CreateLinkModalProps> = ({
 
         {/* Form */}
         <form onSubmit={handleSubmit} noValidate className="mt-4 space-y-4">
+          {/* Error Summary Banner when validation fails */}
+          {Object.keys(errors).length > 0 && (
+            <div
+              role="alert"
+              className="p-3 bg-rose-50 border border-rose-200 rounded-xl flex items-start gap-2.5 text-rose-800 text-xs animate-in fade-in"
+            >
+              <AlertTriangle className="w-4 h-4 shrink-0 text-rose-600 mt-0.5" aria-hidden="true" />
+              <div>
+                <p className="font-semibold">Please resolve the following errors:</p>
+                <ul className="list-disc list-inside mt-1 space-y-0.5 text-rose-700">
+                  {Object.values(errors).map((err, idx) => (
+                    <li key={idx}>{err}</li>
+                  ))}
+                </ul>
+              </div>
+            </div>
+          )}
+
           {/* Amount */}
           <div>
-            <label
-              htmlFor="amount"
-              className="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1"
-            >
-              Amount (₹ INR) <span className="text-rose-500">*</span>
-            </label>
+            <div className="flex items-center justify-between mb-1">
+              <label
+                htmlFor="amount"
+                className="block text-xs font-semibold text-slate-700 uppercase tracking-wider"
+              >
+                Amount (₹ INR) <span className="text-rose-500">*</span>
+              </label>
+              <span className="text-[11px] text-slate-400">Min ₹1 • Max ₹1 Cr</span>
+            </div>
             <div className="relative">
               <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400">
                 <IndianRupee className="w-4 h-4" aria-hidden="true" />
@@ -163,21 +184,35 @@ export const CreateLinkModal: React.FC<CreateLinkModalProps> = ({
                 }`}
               />
             </div>
-            {errors.amount && (
+            {errors.amount ? (
               <p id="amount-error" className="text-xs text-rose-500 mt-1 font-medium">
                 {errors.amount}
+              </p>
+            ) : (
+              <p className="text-[11px] text-slate-400 mt-1">
+                Enter the amount customer should pay for this transaction
               </p>
             )}
           </div>
 
           {/* Description */}
           <div>
-            <label
-              htmlFor="description"
-              className="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1"
-            >
-              Payment Description <span className="text-rose-500">*</span>
-            </label>
+            <div className="flex items-center justify-between mb-1">
+              <label
+                htmlFor="description"
+                className="block text-xs font-semibold text-slate-700 uppercase tracking-wider"
+              >
+                Payment Description <span className="text-rose-500">*</span>
+              </label>
+              <span
+                id="desc-counter"
+                className={`text-[11px] ${
+                  formData.description.length >= 200 ? 'text-rose-500 font-bold' : 'text-slate-400'
+                }`}
+              >
+                {formData.description.length} / 200
+              </span>
+            </div>
             <div className="relative">
               <div className="absolute top-2.5 left-3 pointer-events-none text-slate-400">
                 <FileText className="w-4 h-4" aria-hidden="true" />
@@ -416,3 +451,4 @@ export const CreateLinkModal: React.FC<CreateLinkModalProps> = ({
     </div>
   );
 };
+

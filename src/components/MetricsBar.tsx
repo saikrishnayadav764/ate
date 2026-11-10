@@ -57,3 +57,4 @@ export const MetricsBar: React.FC<MetricsBarProps> = ({ metrics }) => {
     </div>
   );
 };
+

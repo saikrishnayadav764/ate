@@ -1,6 +1,6 @@
 import { CreatePaymentLinkInput, ValidationErrors } from '../types/paymentLink';
 
-const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const EMAIL_REGEX = /^[^\s@]+@[a-zA-Z0-9]+(?:[-.][a-zA-Z0-9]+)*\.[a-zA-Z]{2,}$/;
 const PHONE_REGEX = /^(?:\+91|91|0)?[6-9]\d{9}$/;
 
 export function isValidEmail(email: string): boolean {
@@ -83,3 +83,4 @@ export function validatePaymentLinkForm(
     errors,
   };
 }
+

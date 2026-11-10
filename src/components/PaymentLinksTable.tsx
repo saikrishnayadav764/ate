@@ -12,10 +12,15 @@ import {
   PlusCircle,
   Inbox,
   Loader2,
+  FilterX,
 } from 'lucide-react';
 
 interface PaymentLinksTableProps {
   links: PaymentLink[];
+  totalCount: number;
+  searchQuery: string;
+  statusFilter: string;
+  onClearFilters: () => void;
   isLoading: boolean;
   onOpenCreateModal: () => void;
   onCancelLink: (id: string) => void;
@@ -24,6 +29,10 @@ interface PaymentLinksTableProps {
 
 export const PaymentLinksTable: React.FC<PaymentLinksTableProps> = ({
   links,
+  totalCount,
+  searchQuery,
+  statusFilter,
+  onClearFilters,
   isLoading,
   onOpenCreateModal,
   onCancelLink,
@@ -39,7 +48,7 @@ export const PaymentLinksTable: React.FC<PaymentLinksTableProps> = ({
 
   if (isLoading) {
     return (
-      <div className="bg-white rounded-2xl border border-slate-200 p-12 text-center shadow-sm">
+      <div className="bg-white rounded-2xl border border-slate-200 p-12 text-center shadow-sm" role="status" aria-live="polite">
         <Loader2 className="w-8 h-8 text-razorpay-blue animate-spin mx-auto mb-3" aria-hidden="true" />
         <p className="text-sm font-medium text-slate-600">Loading payment links...</p>
       </div>
@@ -47,22 +56,52 @@ export const PaymentLinksTable: React.FC<PaymentLinksTableProps> = ({
   }
 
   if (links.length === 0) {
+    const isFiltered = totalCount > 0;
+
     return (
-      <div className="bg-white rounded-2xl border border-slate-200 p-12 text-center shadow-sm">
+      <div className="bg-white rounded-2xl border border-slate-200 p-12 text-center shadow-sm" role="region" aria-label="No data">
         <div className="w-14 h-14 bg-slate-100 rounded-full flex items-center justify-center mx-auto mb-4 text-slate-400">
-          <Inbox className="w-7 h-7" aria-hidden="true" />
+          {isFiltered ? (
+            <FilterX className="w-7 h-7 text-amber-500" aria-hidden="true" />
+          ) : (
+            <Inbox className="w-7 h-7 text-slate-400" aria-hidden="true" />
+          )}
         </div>
-        <h3 className="text-base font-semibold text-slate-800">No payment links found</h3>
-        <p className="text-sm text-slate-500 max-w-sm mx-auto mt-1 mb-5">
-          There are no links matching your search or filter criteria. Create a new link to get started.
+        <h3 className="text-base font-semibold text-slate-800">
+          {isFiltered ? 'No matching payment links found' : 'No payment links created yet'}
+        </h3>
+        <p className="text-sm text-slate-500 max-w-md mx-auto mt-1 mb-6 leading-relaxed">
+          {isFiltered ? (
+            <>
+              No results found for {searchQuery ? <span className="font-semibold text-slate-700">"{searchQuery}"</span> : 'your query'}
+              {statusFilter !== 'ALL' && <span> with status <span className="font-semibold text-slate-700">{statusFilter}</span></span>}.
+              Try clearing filters or search terms.
+            </>
+          ) : (
+            'Start collecting customer payments instantly by creating your first payment link with automated notifications and flexible partial payment support.'
+          )}
         </p>
-        <button
-          onClick={onOpenCreateModal}
-          className="inline-flex items-center gap-2 px-4 py-2 text-sm font-semibold text-white bg-razorpay-dark hover:bg-razorpay-navy rounded-lg shadow-sm transition-colors"
-        >
-          <PlusCircle className="w-4 h-4" aria-hidden="true" />
-          Create Payment Link
-        </button>
+
+        <div className="flex items-center justify-center gap-3">
+          {isFiltered && (
+            <button
+              id="clear-filters-btn"
+              onClick={onClearFilters}
+              className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-slate-700 bg-slate-100 hover:bg-slate-200 rounded-lg transition-colors"
+            >
+              <FilterX className="w-4 h-4" aria-hidden="true" />
+              Clear Filters
+            </button>
+          )}
+          <button
+            id="empty-state-create-btn"
+            onClick={onOpenCreateModal}
+            className="inline-flex items-center gap-2 px-4 py-2 text-sm font-semibold text-white bg-razorpay-dark hover:bg-razorpay-navy rounded-lg shadow-sm transition-colors"
+          >
+            <PlusCircle className="w-4 h-4" aria-hidden="true" />
+            {isFiltered ? 'Create New Link' : 'Create Your First Link'}
+          </button>
+        </div>
       </div>
     );
   }

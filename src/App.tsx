@@ -11,6 +11,7 @@ import { Plus, ShieldCheck, CheckCircle2 } from 'lucide-react';
 export const App: React.FC = () => {
   const {
     links,
+    allLinks,
     isLoading,
     statusFilter,
     setStatusFilter,
@@ -111,6 +112,13 @@ export const App: React.FC = () => {
         {/* Table of Payment Links */}
         <PaymentLinksTable
           links={links}
+          totalCount={allLinks.length}
+          searchQuery={searchQuery}
+          statusFilter={statusFilter}
+          onClearFilters={() => {
+            setSearchQuery('');
+            setStatusFilter('ALL');
+          }}
           isLoading={isLoading}
           onOpenCreateModal={() => setIsCreateModalOpen(true)}
           onCancelLink={handleCancel}
@@ -146,3 +154,4 @@ export const App: React.FC = () => {
 };
 
 export default App;
+

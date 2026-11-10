@@ -35,3 +35,4 @@ export function generateShortUrl(id: string): string {
   const hash = id.replace('plink_', '').slice(0, 8);
   return `https://rzp.io/l/${hash}`;
 }
+
