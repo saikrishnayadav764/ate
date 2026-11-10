@@ -98,3 +98,22 @@ export interface PaymentLink {
 - [ ] Fully responsive on mobile (card view or scrollable table) and desktop.
 - [ ] Polished Razorpay Blade aesthetic: clean typography, subtle borders, high contrast badges.
 
+---
+
+## 4. Section 4: Requirement Changes (Adaptation Phase)
+
+### RC-01: Strict Input Constraints & Field Restrictions
+- **Phone Number Guard**: Restrict customer phone to strictly 10 digits (`maxLength={10}`, digits only). Automatically strip non-numeric characters and reject entering more than 10 digits.
+- **Amount Restrictions**: Block invalid numeric keys (`-`, `+`, `e`, `E`), cap at ₹1,00,00,000, and enforce a maximum of 2 decimal places.
+- **Live Description Counter**: Display dynamic character count (`x / 200`) with visual warning when reaching the boundary.
+- **Date Constraints**: Set HTML `min` attribute on `datetime-local` input to current timestamp to prevent selecting past dates.
+
+### RC-02: Immediate Real-Time Inline Validation
+- **Instant Error Feedback on Blur**: Validate fields immediately on `onBlur` and display inline error messages without waiting for form submission.
+- **Dynamic Error Recovery on Keystroke**: Clear or update field errors in real time as valid input is entered.
+- **Error Summary Alert**: Render an accessible `role="alert"` summary banner itemizing all validation failures on form submission attempt.
+
+### RC-03: Communicative Context-Aware Empty States
+- **Total Empty State**: Display onboarding guidance with a primary "Create Your First Link" button when no links exist.
+- **Filtered / Search Empty State**: Display an informative message citing the exact query and active status tab (e.g., `No results found for "XYZ" with status ISSUED`) along with a one-click "Clear Filters" recovery action.
+
