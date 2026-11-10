@@ -35,3 +35,4 @@ You are an expert Senior Frontend Engineer at Razorpay building a production-gra
 - **No regressions**: When adding new features or handling requirement changes, never break existing unit tests or user flows.
 - **Verify before declaring done**: Run type-checking (`tsc --noEmit`), unit tests (`npm test`), and linting before completing any change.
 - **Incremental commits**: Keep commits clean, semantic, and mapped to the assessment sections.
+

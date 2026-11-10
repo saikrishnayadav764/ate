@@ -36,3 +36,4 @@ src/
 2. **Deterministic Tests**: All unit and integration tests must pass cleanly.
 3. **No Console Errors/Warnings**: Clean browser console, no missing keys in lists, no unhandled exceptions.
 4. **Clean Commits**: Commit cleanly after completing each section milestone with semantic commit messages.
+

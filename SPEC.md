@@ -97,3 +97,4 @@ export interface PaymentLink {
 ### AC-08: Responsive Design & Polish
 - [ ] Fully responsive on mobile (card view or scrollable table) and desktop.
 - [ ] Polished Razorpay Blade aesthetic: clean typography, subtle borders, high contrast badges.
+
